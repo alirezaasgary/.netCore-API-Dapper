@@ -77,5 +77,30 @@ namespace Employee.Repository
                 return createdCompany;
             }
         }
+
+        public async Task UpdateCompany(CompanyForUpdateDto company,int id)
+        {
+            var query = "update company set name=@name,address=@address,country=@country where id=@id";
+
+            var parameters = new DynamicParameters();
+            parameters.Add("id", id, DbType.Int32);
+            parameters.Add("name", company.Name, DbType.String);
+            parameters.Add("address" , company.Address, DbType.String);
+            parameters.Add("country",company.Country, DbType.String);   
+
+            using(var connection = _context.CreateConnection())
+            {
+                await connection.ExecuteAsync(query, parameters);
+            }
+        }
+
+        public async Task DeleteCompany(int id)
+        {
+            string query = "delete from company where id=@id";
+            using(var connection = _context.CreateConnection())
+            {
+                await connection.ExecuteAsync(query, new {id});
+            }
+        }
     }
 }

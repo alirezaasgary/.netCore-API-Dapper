@@ -11,5 +11,9 @@ namespace Employee.Repository
         public Task CreateCompany(CompanyForCreationDto company);
         public Task<Company> CreateCompany2(CompanyForCreationDto company);
 
+        public Task UpdateCompany(CompanyForUpdateDto company, int id);
+
+        public Task DeleteCompany(int id);
+
     }
 }
