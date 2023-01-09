@@ -1,0 +1,81 @@
+﻿using Dapper;
+using Employee.Context;
+using Employee.DTOs;
+using Employee.Entities;
+using System.Data;
+
+namespace Employee.Repository
+{
+    public class CompanyRepository : ICompanyRepository
+    {
+        private readonly DapperContext _context;
+        public CompanyRepository( DapperContext context)
+        {
+            _context= context;
+        }
+
+        
+
+        public async Task<IEnumerable<Company>> GetCompanies()
+        {
+            string query = "select * from company";
+            
+            using(var connection = _context.CreateConnection())
+            {
+                var companies = await connection.QueryAsync<Company>(query);
+                return companies.ToList();
+            }
+        }
+
+        public async Task<Company> GetCompanyById(int id)
+        {
+            string query = "select * from company where id=@Id";
+
+            using (var connection=_context.CreateConnection() )
+            {
+                var company = await connection.QuerySingleOrDefaultAsync<Company>(query, new {id});
+                return company;
+            }
+        }
+
+        public async Task CreateCompany(CompanyForCreationDto company)
+        {
+            var query = "insert into company(Name,Address,Country) VALUES  (@name , @address,@country)";
+            var parameters = new DynamicParameters();
+            parameters.Add("Name", company.Name, DbType.String);
+            parameters.Add("Address", company.Address, DbType.String);
+            parameters.Add("Country", company.Country, DbType.String);
+
+            using (var connection = _context.CreateConnection())
+            {
+                await connection.ExecuteAsync(query, parameters);
+            }
+        }
+        //Creating a Better API Solution
+        public async Task<Company> CreateCompany2(CompanyForCreationDto company)
+        {
+            var query = "INSERT INTO company (Name, Address, Country) VALUES (@Name, @Address, @Country)" +
+                "SELECT CAST(SCOPE_IDENTITY() as int)";
+
+            var parameters = new DynamicParameters();
+            parameters.Add("Name", company.Name, DbType.String);
+            parameters.Add("Address", company.Address, DbType.String);
+            parameters.Add("Country", company.Country, DbType.String);
+
+            using (var connection = _context.CreateConnection())
+            {
+                var id = await connection.QuerySingleAsync<int>(query, parameters);
+
+                var createdCompany = new Company
+                {
+                    Id = id,
+                    Name = company.Name,
+                    Address = company.Address,
+                    Country = company.Country
+                };
+
+                return createdCompany;
+            }
+        }
+    }
+}
