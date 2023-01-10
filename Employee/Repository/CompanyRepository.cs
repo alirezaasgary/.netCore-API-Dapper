@@ -102,5 +102,38 @@ namespace Employee.Repository
                 await connection.ExecuteAsync(query, new {id});
             }
         }
+
+        public async Task<Company> GetCompanyByEmployeeId(int id)
+        {
+            var procedureName = "ShowCompanyForProvidedEmployeeId";
+            var parameters = new DynamicParameters();
+            parameters.Add("Id", id, DbType.Int32, ParameterDirection.Input);
+
+            using (var connection = _context.CreateConnection())
+            {
+                var company = await connection.QueryFirstOrDefaultAsync<Company>
+                    (procedureName, parameters, commandType: CommandType.StoredProcedure);
+
+                return company;
+            }
+        }
+
+        public async Task<Company> GetCompanyEmployeesMultipleResults(int id)
+        {
+            var query = "SELECT * FROM Company WHERE Id = @Id;" +
+              "SELECT * FROM Employee WHERE CompanyId = @Id";
+
+            using (var connection = _context.CreateConnection())
+            using (var multi = await connection.QueryMultipleAsync(query, new { id }))
+            {
+                var company = await multi.ReadSingleOrDefaultAsync<Company>();
+                if (company != null)
+                    company.Employees = (await multi.ReadAsync<Employee.Entities.Employee>()).ToList();
+
+                return company;
+            }
+        }
+
+
     }
 }
